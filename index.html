@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Snow Depth Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="controls-panel">
+        <button id="togglePanel" class="toggle-btn" title="Toggle Controls">☰</button>
+        <div class="panel-content">
+            <header>
+                <h1>Snow Visualizer</h1>
+            </header>
+            <div class="input-group">
+                <label for="snowDepth">Snow Depth:</label>
+                <div class="input-row">
+                    <input type="number" id="snowDepth" value="10" min="0" max="500" step="0.5">
+                    <select id="unit" title="Select unit for snow depth measurement">
+                        <option value="cm">cm</option>
+                        <option value="inches">inches</option>
+                        <option value="ft">ft</option>
+                        <option value="m">m</option>
+                    </select>
+                </div>
+                <button id="updateBtn">Update</button>
+            </div>
+
+            <div class="preset-buttons">
+                <button class="preset" data-value="5" data-unit="cm">5 cm</button>
+                <button class="preset" data-value="10" data-unit="cm">10 cm</button>
+                <button class="preset" data-value="30" data-unit="cm">30 cm</button>
+                <button class="preset" data-value="1" data-unit="ft">1 ft</button>
+                <button class="preset" data-value="3" data-unit="ft">3 ft</button>
+                <button class="preset" data-value="6" data-unit="ft">6 ft</button>
+            </div>
+
+            <div class="reference-object">
+                <label for="referenceSelect">Reference Object:</label>
+                <select id="referenceSelect">
+                    <option value="soda-can">Soda Can (12 cm)</option>
+                    <option value="basketball">Basketball (24 cm)</option>
+                    <option value="traffic-cone">Traffic Cone (70 cm)</option>
+                    <option value="person">Average Person (170 cm)</option>
+                    <option value="door">Standard Door (200 cm)</option>
+                    <option value="car">Car (150 cm)</option>
+                </select>
+            </div>
+
+            <div class="info-display">
+                <h3>Current Snow Depth</h3>
+                <div id="displayDepth">10 cm</div>
+                <div id="comparison"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="snowCanvas"></canvas>
+        <div class="controls-hint">
+            <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
