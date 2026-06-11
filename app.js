@@ -172,11 +172,21 @@ function setupControls() {
     }
 }
 
+function disposeMesh(mesh) {
+    mesh.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            child.material.dispose();
+        }
+    });
+}
+
 function createSnow(depthCm) {
     if (snowMesh) {
         scene.remove(snowMesh);
+        disposeMesh(snowMesh);
     }
-    
+
     const depthMeters = depthCm / 100;
     const geometry = new THREE.BoxGeometry(10, depthMeters, 10);
     const material = new THREE.MeshStandardMaterial({ 
@@ -195,6 +205,7 @@ function createSnow(depthCm) {
 function createReferenceObject(type) {
     if (referenceMesh) {
         scene.remove(referenceMesh);
+        disposeMesh(referenceMesh);
     }
     
     const objData = referenceObjects[type];
@@ -396,10 +407,10 @@ function createReferenceObject(type) {
             referenceMesh.position.y = heightMeters * 0.5;
     }
     
-    if (type !== 'basketball' && type !== 'door') {
-        referenceMesh.position.set(2, 0, 0);
-    } else if (type === 'basketball') {
-        referenceMesh.position.set(2, 0, 0);
+    // Offset to the side without overwriting the y position set above
+    // (e.g. the basketball rests on its radius, the door on its frame)
+    if (type !== 'door') {
+        referenceMesh.position.x = 2;
     }
     
     referenceMesh.traverse((child) => {
@@ -450,15 +461,26 @@ function onWindowResize() {
     renderer.setSize(container.clientWidth, container.clientHeight);
 }
 
+// Read the depth input, falling back to the current value when it's empty or invalid
+function readSnowDepthInput() {
+    const input = document.getElementById('snowDepth');
+    const value = parseFloat(input.value);
+    if (!Number.isFinite(value) || value < 0) {
+        input.value = currentSnowDepth;
+        return currentSnowDepth;
+    }
+    return value;
+}
+
 document.getElementById('updateBtn').addEventListener('click', () => {
-    currentSnowDepth = parseFloat(document.getElementById('snowDepth').value);
+    currentSnowDepth = readSnowDepthInput();
     currentUnit = document.getElementById('unit').value;
     updateVisualization();
 });
 
 document.getElementById('snowDepth').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-        currentSnowDepth = parseFloat(document.getElementById('snowDepth').value);
+        currentSnowDepth = readSnowDepthInput();
         currentUnit = document.getElementById('unit').value;
         updateVisualization();
     }
@@ -466,6 +488,8 @@ document.getElementById('snowDepth').addEventListener('keypress', (e) => {
 
 document.getElementById('unit').addEventListener('change', () => {
     currentUnit = document.getElementById('unit').value;
+    // Only the snow mesh depends on the unit; the reference object is unchanged
+    createSnow(convertToCm(currentSnowDepth, currentUnit));
     updateDisplay();
 });
 
