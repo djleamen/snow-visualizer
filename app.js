@@ -488,7 +488,9 @@ document.getElementById('snowDepth').addEventListener('keypress', (e) => {
 
 document.getElementById('unit').addEventListener('change', () => {
     currentUnit = document.getElementById('unit').value;
-    updateVisualization();
+    // Only the snow mesh depends on the unit; the reference object is unchanged
+    createSnow(convertToCm(currentSnowDepth, currentUnit));
+    updateDisplay();
 });
 
 document.querySelectorAll('.preset').forEach(button => {
