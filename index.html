@@ -36,6 +36,20 @@
                 <button class="preset" data-value="6" data-unit="ft">6 ft</button>
             </div>
 
+            <div class="historical-section">
+                <h3 class="historical-title">📍 Historical Data</h3>
+                <div class="input-group">
+                    <label for="locationInput">Location:</label>
+                    <input type="text" id="locationInput" placeholder="e.g. Denver, CO" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="historicalDate">Date:</label>
+                    <input type="date" id="historicalDate">
+                </div>
+                <button id="fetchHistoricalBtn">Fetch Snow Data</button>
+                <div id="fetchStatus" class="fetch-status" aria-live="polite"></div>
+            </div>
+
             <div class="reference-object">
                 <label for="referenceSelect">Reference Object:</label>
                 <select id="referenceSelect">
