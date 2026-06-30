@@ -518,3 +518,83 @@ document.getElementById('togglePanel').addEventListener('click', () => {
 });
 
 window.addEventListener('load', init);
+
+// ---- Historical snow data fetching ----
+
+// Set date picker max to 7 days ago for reliable Open-Meteo archive coverage
+(function initDatePicker() {
+    const input = document.getElementById('historicalDate');
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    input.max = d.toISOString().split('T')[0];
+    // Default to a week ago
+    input.value = d.toISOString().split('T')[0];
+})();
+
+async function geocodeLocation(locationName) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1&language=en&format=json`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Geocoding request failed');
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) {
+        throw new Error(`Location "${locationName}" not found`);
+    }
+    const { latitude, longitude, name, admin1, country } = data.results[0];
+    const displayName = [name, admin1, country].filter(Boolean).join(', ');
+    return { lat: latitude, lon: longitude, displayName };
+}
+
+async function fetchHistoricalSnow(lat, lon, date) {
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=snow_depth_max&timezone=UTC`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather archive request failed');
+    const data = await response.json();
+    const depthMeters = data.daily?.snow_depth_max?.[0];
+    // null means no snow recorded; treat as 0
+    return depthMeters != null ? depthMeters * 100 : 0;
+}
+
+document.getElementById('fetchHistoricalBtn').addEventListener('click', async () => {
+    const locationName = document.getElementById('locationInput').value.trim();
+    const date = document.getElementById('historicalDate').value;
+    const statusEl = document.getElementById('fetchStatus');
+    const btn = document.getElementById('fetchHistoricalBtn');
+
+    if (!locationName) {
+        statusEl.textContent = '⚠️ Please enter a location.';
+        statusEl.className = 'fetch-status error';
+        return;
+    }
+    if (!date) {
+        statusEl.textContent = '⚠️ Please select a date.';
+        statusEl.className = 'fetch-status error';
+        return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = '⏳ Fetching data…';
+    statusEl.className = 'fetch-status loading';
+
+    try {
+        const { lat, lon, displayName } = await geocodeLocation(locationName);
+        const depthCm = await fetchHistoricalSnow(lat, lon, date);
+
+        // Update the visualizer
+        document.getElementById('snowDepth').value = depthCm.toFixed(1);
+        document.getElementById('unit').value = 'cm';
+        currentSnowDepth = depthCm;
+        currentUnit = 'cm';
+        updateVisualization();
+
+        const msg = depthCm > 0
+            ? `✅ ${displayName}: ${depthCm.toFixed(1)} cm of snow on ${date}`
+            : `ℹ️ ${displayName}: No snow recorded on ${date}`;
+        statusEl.textContent = msg;
+        statusEl.className = `fetch-status ${depthCm > 0 ? 'success' : 'info'}`;
+    } catch (err) {
+        statusEl.textContent = `❌ ${err.message}`;
+        statusEl.className = 'fetch-status error';
+    } finally {
+        btn.disabled = false;
+    }
+});
