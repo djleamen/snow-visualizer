@@ -526,9 +526,10 @@ window.addEventListener('load', init);
     const input = document.getElementById('historicalDate');
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    input.max = d.toISOString().split('T')[0];
-    // Default to a week ago
-    input.value = d.toISOString().split('T')[0];
+    // Use local year/month/day to avoid UTC offset shifting the date by ±1 day
+    const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    input.max = localDate;
+    input.value = localDate;
 })();
 
 async function geocodeLocation(locationName) {
@@ -549,7 +550,10 @@ async function fetchHistoricalSnow(lat, lon, date) {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Weather archive request failed');
     const data = await response.json();
-    const depthMeters = data.daily?.snow_depth_max?.[0];
+    if (!data.daily || !Array.isArray(data.daily.snow_depth_max)) {
+        throw new Error('Unexpected response from weather archive');
+    }
+    const depthMeters = data.daily.snow_depth_max[0];
     // null means no snow recorded; treat as 0
     return depthMeters != null ? depthMeters * 100 : 0;
 }
@@ -592,7 +596,8 @@ document.getElementById('fetchHistoricalBtn').addEventListener('click', async ()
         statusEl.textContent = msg;
         statusEl.className = `fetch-status ${depthCm > 0 ? 'success' : 'info'}`;
     } catch (err) {
-        statusEl.textContent = `❌ ${err.message}`;
+        const msg = (err instanceof Error && err.message) ? err.message : String(err);
+        statusEl.textContent = `❌ ${msg}`;
         statusEl.className = 'fetch-status error';
     } finally {
         btn.disabled = false;
