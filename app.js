@@ -130,6 +130,11 @@ function setupControls() {
     };
 
     canvas.addEventListener('pointerdown', (e) => {
+        // Track at most two contacts. A third finger landing mid-pinch would
+        // otherwise fall through to the single-pointer path and start rotating
+        // the camera, and lifting it later would resume the pinch from a stale
+        // span. Ignore any contact beyond the two already tracked.
+        if (pointers.size >= 2) return;
         try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (pointers.size === 2) {
@@ -177,6 +182,9 @@ function setupControls() {
     });
 
     const endPointer = (e) => {
+        // Ignore contacts we never tracked (e.g. a third finger dropped during
+        // a pinch) so they can't disturb the active gesture's state.
+        if (!pointers.has(e.pointerId)) return;
         pointers.delete(e.pointerId);
         isPanning = false;
         // Lifting one finger of a pinch hands control back to the other one:
