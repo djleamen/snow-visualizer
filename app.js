@@ -130,7 +130,7 @@ function setupControls() {
     };
 
     canvas.addEventListener('pointerdown', (e) => {
-        canvas.setPointerCapture(e.pointerId);
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (pointers.size === 2) {
             isDragging = isPanning = false;
@@ -178,8 +178,12 @@ function setupControls() {
 
     const endPointer = (e) => {
         pointers.delete(e.pointerId);
-        isDragging = false;
         isPanning = false;
+        // Lifting one finger of a pinch hands control back to the other one:
+        // resume rotating from where it is now, without a jump.
+        const [remaining] = pointers.values();
+        isDragging = Boolean(remaining);
+        if (remaining) previousMousePosition = { ...remaining };
     };
     canvas.addEventListener('pointerup', endPointer);
     canvas.addEventListener('pointercancel', endPointer);
@@ -590,7 +594,8 @@ async function fetchHistoricalSnow(lat, lon, date) {
 }
 
 document.getElementById('locationInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('fetchHistoricalBtn').click();
+    // isComposing: Enter that confirms an IME candidate (e.g. Chinese, Japanese) isn't a submit.
+    if (e.key === 'Enter' && !e.isComposing) document.getElementById('fetchHistoricalBtn').click();
 });
 
 document.getElementById('fetchHistoricalBtn').addEventListener('click', async () => {
