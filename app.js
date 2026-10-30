@@ -68,6 +68,7 @@ function init() {
         canvas: canvas,
         antialias: true 
     });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -117,7 +118,30 @@ function setupControls() {
     let cameraDistance = 8;
     let panOffset = { x: 0, y: 0 };
     
-    canvas.addEventListener('mousedown', (e) => {
+    // Pointer events cover mouse, touch and pen. One pointer rotates (or pans
+    // with the right mouse button), two pointers pinch-zoom. Pointer capture
+    // keeps a drag alive when the cursor leaves the canvas.
+    const pointers = new Map();
+    let pinchDistance = 0;
+
+    const pinchSpan = () => {
+        const [a, b] = [...pointers.values()];
+        return Math.hypot(a.x - b.x, a.y - b.y);
+    };
+
+    canvas.addEventListener('pointerdown', (e) => {
+        // Track at most two contacts. A third finger landing mid-pinch would
+        // otherwise fall through to the single-pointer path and start rotating
+        // the camera, and lifting it later would resume the pinch from a stale
+        // span. Ignore any contact beyond the two already tracked.
+        if (pointers.size >= 2) return;
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 2) {
+            isDragging = isPanning = false;
+            pinchDistance = pinchSpan();
+            return;
+        }
         if (e.button === 0) {
             isDragging = true;
         } else if (e.button === 2) {
@@ -125,8 +149,17 @@ function setupControls() {
         }
         previousMousePosition = { x: e.clientX, y: e.clientY };
     });
-    
-    canvas.addEventListener('mousemove', (e) => {
+
+    canvas.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 2) {
+            const span = pinchSpan();
+            cameraDistance = Math.max(2, Math.min(20, cameraDistance * (pinchDistance / span)));
+            pinchDistance = span;
+            updateCameraPosition();
+            return;
+        }
         if (isDragging) {
             const deltaX = e.clientX - previousMousePosition.x;
             const deltaY = e.clientY - previousMousePosition.y;
@@ -147,11 +180,21 @@ function setupControls() {
         }
         previousMousePosition = { x: e.clientX, y: e.clientY };
     });
-    
-    canvas.addEventListener('mouseup', () => {
-        isDragging = false;
+
+    const endPointer = (e) => {
+        // Ignore contacts we never tracked (e.g. a third finger dropped during
+        // a pinch) so they can't disturb the active gesture's state.
+        if (!pointers.has(e.pointerId)) return;
+        pointers.delete(e.pointerId);
         isPanning = false;
-    });
+        // Lifting one finger of a pinch hands control back to the other one:
+        // resume rotating from where it is now, without a jump.
+        const [remaining] = pointers.values();
+        isDragging = Boolean(remaining);
+        if (remaining) previousMousePosition = { ...remaining };
+    };
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
     
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -512,9 +555,9 @@ document.getElementById('referenceSelect').addEventListener('change', (e) => {
     updateVisualization();
 });
 
-document.getElementById('togglePanel').addEventListener('click', () => {
-    const panel = document.querySelector('.controls-panel');
-    panel.classList.toggle('collapsed');
+document.getElementById('togglePanel').addEventListener('click', (e) => {
+    const collapsed = document.querySelector('.controls-panel').classList.toggle('collapsed');
+    e.currentTarget.setAttribute('aria-expanded', String(!collapsed));
 });
 
 window.addEventListener('load', init);
@@ -557,6 +600,11 @@ async function fetchHistoricalSnow(lat, lon, date) {
     // null means no snow recorded; treat as 0
     return depthMeters != null ? depthMeters * 100 : 0;
 }
+
+document.getElementById('locationInput').addEventListener('keydown', (e) => {
+    // isComposing: Enter that confirms an IME candidate (e.g. Chinese, Japanese) isn't a submit.
+    if (e.key === 'Enter' && !e.isComposing) document.getElementById('fetchHistoricalBtn').click();
+});
 
 document.getElementById('fetchHistoricalBtn').addEventListener('click', async () => {
     const locationName = document.getElementById('locationInput').value.trim();
