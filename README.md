@@ -14,6 +14,8 @@ An interactive web application that visualizes snow depth in 3D perspective by c
   - Standard Door (200 cm)
   - Car (150 cm)
 - **Quick Presets**: One-click buttons for common snow depths
+- **Historical Snow Data**: Look up the recorded snow depth for any place and date
+- **Touch Support**: One-finger rotate and pinch-to-zoom on phones and tablets
 - **Custom Input**: Enter any snow depth value
 - **Real-time Comparison**: See percentage or multiple comparisons with reference objects
 
@@ -23,9 +25,10 @@ An interactive web application that visualizes snow depth in 3D perspective by c
 2. Enter a snow depth value or click a preset button
 3. Select your preferred unit (cm, inches, ft, m)
 4. Choose a reference object for comparison
-5. Interact with the 3D scene:
-   - **Left click + drag**: Rotate camera
-   - **Scroll wheel**: Zoom in/out
+5. Or look up a real day: enter a location and date under **Historical Data** (powered by the free [Open-Meteo](https://open-meteo.com/) archive, no API key needed)
+6. Interact with the 3D scene:
+   - **Drag** (mouse or one finger): Rotate camera
+   - **Scroll wheel / pinch**: Zoom in/out
    - **Right click + drag**: Pan camera
 
 ## Technologies Used

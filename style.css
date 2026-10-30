@@ -232,6 +232,7 @@ header h1 {
     width: 100%;
     height: 100%;
     display: block;
+    touch-action: none; /* let pointer handlers own drag/pinch on touch screens */
 }
 
 .controls-hint {

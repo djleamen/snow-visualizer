@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="controls-panel">
-        <button id="togglePanel" class="toggle-btn" title="Toggle Controls">☰</button>
+        <button id="togglePanel" class="toggle-btn" title="Toggle Controls" aria-label="Toggle controls" aria-expanded="true">☰</button>
         <div class="panel-content">
             <header>
                 <h1>Snow Visualizer</h1>
@@ -73,11 +73,11 @@
     <div id="canvas-container">
         <canvas id="snowCanvas"></canvas>
         <div class="controls-hint">
-            <p>🖱️ Left click + drag to rotate | Scroll to zoom | Right click + drag to pan</p>
+            <p>🖱️ Drag to rotate · Scroll or pinch to zoom · Right-drag to pan</p>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="app.js"></script>
 </body>
 </html>
